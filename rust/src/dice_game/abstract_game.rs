@@ -19,6 +19,7 @@ pub type SlotIndex = usize;
 pub trait Slot : std::fmt::Display + std::marker::Sync {
     fn slot_mask(&self) -> SlotMask;
     fn index(&self) -> SlotIndex;
+    fn bonus(&self) -> bool;
 }
 
 
@@ -43,6 +44,10 @@ pub trait Game<O: Outcome, M: Move, S: Slot> : std::fmt::Display + std::marker::
 
     // Give a random initial outcome with a correct probability distribution
     fn random_initial_outcome<'a>(&'a self) -> &'a O;
+
+    fn bonus_score(&self) -> f32;
+
+    fn bonus_threshold(&self) -> f32;
 }
 
 

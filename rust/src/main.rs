@@ -1,10 +1,12 @@
 mod dice_game;
 //use dice_game::abstract_game::*;
 use dice_game::game_solver::*;
+use dice_game::game_player::*;
 use dice_game::*;
 
 use std::io;
 use std::time::{Instant};
+
 
 fn print_outcome_probabilities(v: Vec<(&UnorderedDiceOutcome, f32)>) -> String {
     v.iter().map(|(o, p)| format!("[{}: {:.2}%]", &o, (*p)*100.0)).collect::<Vec<String>>().join(",")
@@ -13,26 +15,28 @@ fn print_outcome_probabilities(v: Vec<(&UnorderedDiceOutcome, f32)>) -> String {
 fn main() {
     println!("Generating game...");
     let slots: Vec<DiceSlotDescription> = vec![
-        dice_game::DiceSlotDescription::ones()
-        , dice_game::DiceSlotDescription::twos()
-        , dice_game::DiceSlotDescription::threes()
-        , dice_game::DiceSlotDescription::fours()
-        , dice_game::DiceSlotDescription::fives()
-        , dice_game::DiceSlotDescription::sixes()
-        , dice_game::DiceSlotDescription::one_pair()
-        , dice_game::DiceSlotDescription::two_pairs()
-        , dice_game::DiceSlotDescription::three_of_a_kind()
-        , dice_game::DiceSlotDescription::four_of_a_kind()
-        , dice_game::DiceSlotDescription::small_straight()
-        , dice_game::DiceSlotDescription::large_straight()
-        , dice_game::DiceSlotDescription::full_house()
-        , dice_game::DiceSlotDescription::yatzy()
-        , dice_game::DiceSlotDescription::chance()
+         dice_game::DiceSlotDescription::ones()
+         , dice_game::DiceSlotDescription::twos()
+         , dice_game::DiceSlotDescription::threes()
+         , dice_game::DiceSlotDescription::fours()
+         , dice_game::DiceSlotDescription::fives()
+         , dice_game::DiceSlotDescription::sixes()
+         , dice_game::DiceSlotDescription::one_pair()
+         , dice_game::DiceSlotDescription::two_pairs()
+         , dice_game::DiceSlotDescription::three_of_a_kind()
+         , dice_game::DiceSlotDescription::four_of_a_kind()
+         , dice_game::DiceSlotDescription::small_straight()
+         , dice_game::DiceSlotDescription::large_straight()
+         , dice_game::DiceSlotDescription::full_house()
+         , dice_game::DiceSlotDescription::yatzy()
+         , dice_game::DiceSlotDescription::chance()
     ];
     let num_dice = 5;
     let num_sides = 6;
     let num_rolls = 3;
-    let game = dice_game::DiceGame::new(num_dice, num_sides, num_rolls, slots);
+    let bonus_threshold: f32 = 63.0;
+    let bonus_score: f32 = 50.0;
+    let game = dice_game::DiceGame::new(num_dice, num_sides, num_rolls, bonus_threshold, bonus_score, slots);
     println!("Game: {}", game);
 
     // let outcome_vec = vec![1, 1, 1];
@@ -54,9 +58,14 @@ fn main() {
 
     println!("=======================================\n");
 
-    play_game(&solver.initial_position(None));
+    //play_game(&solver.initial_position(None));
+    for i in 0..10000 {
+        let protocol = dice_game::game_player::play_whole_game(&solver);
+        println!("Protocol {}: {:?}", i, protocol);
+    }
 }
 
+/*
 fn play_game<'a>(position: &Position<'a, DiceGame, UnorderedDiceOutcome, DiceReroll, DiceSlot>) {
     println!("Current position\n================\n{}", position);
 
@@ -69,6 +78,7 @@ fn play_game<'a>(position: &Position<'a, DiceGame, UnorderedDiceOutcome, DiceRer
         println!("Reached end of play");
     }
 }
+*/
 
 /*
 State

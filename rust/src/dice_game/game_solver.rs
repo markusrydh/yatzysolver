@@ -6,7 +6,7 @@ use rayon::prelude::*;
 use crate::abstract_game::*;
 
 pub struct GameSolver<'a, G: Game<O, M, S>, O: Outcome, M: Move, S: Slot> {
-    game: &'a G,
+    pub game: &'a G,
     initial_stage: Option<Stage>,
     _o: PhantomData<O>,
     _m: PhantomData<M>,
@@ -209,6 +209,11 @@ pub struct Position<'a, G: Game<O, M, S>, O: Outcome, M: Move, S: Slot> {
     score: f32
 }
 
+pub struct FilledSlot{
+    pub index : usize,
+    pub score : f32
+}
+
 impl <'a, G: Game<O, M, S>, O: Outcome, M: Move, S: Slot> Position<'a, G, O, M, S> {
     pub fn is_final(&self) -> bool {
         self.follow_best_move().is_some()
@@ -244,6 +249,25 @@ impl <'a, G: Game<O, M, S>, O: Outcome, M: Move, S: Slot> Position<'a, G, O, M, 
                         score: self.score
                     })
                 },
+                BestMove::Unknown => None
+            };
+        } else {
+            None
+        }
+    }
+
+    pub fn best_slot_to_fill(&self) -> Option<FilledSlot>{
+        if let Some(best_move_with_score) = self.get_best_move() {
+            return match best_move_with_score.best_move {
+                BestMove::SelectSlot(slot_index) => {
+                    let slot = &self.solver.game.slots()[slot_index];
+                    let current_outcome = &self.solver.game.outcomes()[self.outcome_index];
+                    Some(FilledSlot {
+                        index : slot_index,
+                        score: self.solver.game.score(slot, current_outcome)
+                    })
+                },
+                BestMove::Move(move_index) => None,
                 BestMove::Unknown => None
             };
         } else {
