@@ -58,11 +58,14 @@ fn main() {
 
     println!("=======================================\n");
 
-    //play_game(&solver.initial_position(None));
-    for i in 0..10000 {
-        let protocol = dice_game::game_player::play_whole_game(&solver);
-        println!("Protocol {}: {:?}", i, protocol);
-    }
+//        play_game(&solver.initial_position(None));
+
+//        let protocol = dice_game::game_player::play_whole_game(&solver);
+//        println!("Protocol {}: {:?}", i, protocol);
+
+    let statistics = play_games(&solver, 10000);
+    println!("Statistics: {}", statistics);
+
 }
 
 /*
