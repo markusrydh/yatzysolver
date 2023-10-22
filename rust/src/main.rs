@@ -12,15 +12,31 @@ fn print_outcome_probabilities(v: Vec<(&UnorderedDiceOutcome, f32)>) -> String {
     v.iter().map(|(o, p)| format!("[{}: {:.2}%]", &o, (*p)*100.0)).collect::<Vec<String>>().join(",")
 }
 
+//const bonus_factor: f32 = 50.0/63.0;
+const bonus_factor: f32 = 2.0;
+
 fn main() {
     println!("Generating game...");
+    // 3 of each in cat ones to sixes gives bonus = 3*(1+2+3+4+5+6)=63
+    // Spread out the 50 bonus points on the on the remaining 2*(1+2+3+4+5+6)=42 points,
+    // This equals 50/42 points extra for each pip exceeding 3 of that kind.
+    // Examples:
+    //   four 4's = 4*4 + 1*4*50/42 = 20.76 points
+    //   three 3's = 3*3 = 9 points
+    //   five 6's = 5*6 + 2*6*50/42 = 44.28 points
     let slots: Vec<DiceSlotDescription> = vec![
-         dice_game::DiceSlotDescription::ones()
-         , dice_game::DiceSlotDescription::twos()
-         , dice_game::DiceSlotDescription::threes()
-         , dice_game::DiceSlotDescription::fours()
-         , dice_game::DiceSlotDescription::fives()
-         , dice_game::DiceSlotDescription::sixes()
+         dice_game::DiceSlotDescription::ones(Some(|p| if p <= 2.0 { p } else { p + (p-2.0)*bonus_factor }))
+         , dice_game::DiceSlotDescription::twos(Some(|p| if p <= 4.0 { p } else { p + (p-4.0)*bonus_factor }))
+         , dice_game::DiceSlotDescription::threes(Some(|p| if p <= 6.0 { p } else { p + (p-6.0)*bonus_factor }))
+         , dice_game::DiceSlotDescription::fours(Some(|p| if p <= 8.0 { p } else { p + (p-8.0)*bonus_factor }))
+         , dice_game::DiceSlotDescription::fives(Some(|p| if p <= 10.0 { p } else { p + (p-10.0)*bonus_factor }))
+         , dice_game::DiceSlotDescription::sixes(Some(|p| if p <= 12.0 { p } else { p + (p-12.0)*bonus_factor }))
+        //  dice_game::DiceSlotDescription::ones(None)
+        //  , dice_game::DiceSlotDescription::twos(None)
+        //  , dice_game::DiceSlotDescription::threes(None)
+        //  , dice_game::DiceSlotDescription::fours(None)
+        //  , dice_game::DiceSlotDescription::fives(None)
+        //  , dice_game::DiceSlotDescription::sixes(None)
          , dice_game::DiceSlotDescription::one_pair()
          , dice_game::DiceSlotDescription::two_pairs()
          , dice_game::DiceSlotDescription::three_of_a_kind()
@@ -63,9 +79,10 @@ fn main() {
 //        let protocol = dice_game::game_player::play_whole_game(&solver);
 //        println!("Protocol {}: {:?}", i, protocol);
 
-    let statistics = play_games(&solver, 10000);
+    let statistics = play_games(&solver, 1000000);
     println!("Statistics: {}", statistics);
 
+    statistics.print_histogram();
 }
 
 /*
