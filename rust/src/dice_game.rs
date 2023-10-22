@@ -147,37 +147,43 @@ impl Outcome for UnorderedDiceOutcome {
 
 pub struct DiceSlotDescription {
     name: &'static str,
-    score_lambda: fn(&UnorderedDiceOutcome) -> f32,
-    bonus: bool
+    actual_score_lambda: fn(&UnorderedDiceOutcome) -> f32,
+    solve_score_lambda: Option<fn(f32) -> f32>,
+    bonus: bool,
 }
 
 impl DiceSlotDescription {
-    fn new(name: &'static str, bonus: bool,  score_lambda: fn(&UnorderedDiceOutcome) -> f32) -> DiceSlotDescription {
-        DiceSlotDescription { name, score_lambda, bonus }
+    fn new(name: &'static str, bonus: bool, actual_score_lambda: fn(&UnorderedDiceOutcome) -> f32, solve_score_lambda: Option<fn(f32) -> f32>) -> DiceSlotDescription {
+        DiceSlotDescription {
+            name,
+            actual_score_lambda,
+            solve_score_lambda,
+            bonus,
+        }
     }
 
-    pub fn ones() -> DiceSlotDescription {
-        DiceSlotDescription::new("Ones", true, |o| o.count_dice_of_value(1) as f32 * 1.0)
+    pub fn ones(solve_score_lambda: Option<fn(f32) -> f32>) -> DiceSlotDescription {
+        DiceSlotDescription::new("Ones", true, |o| o.count_dice_of_value(1) as f32 * 1.0, solve_score_lambda)
     }
 
-    pub fn twos() -> DiceSlotDescription {
-        DiceSlotDescription::new("Twos", true,|o| o.count_dice_of_value(2) as f32 * 2.0)
+    pub fn twos(solve_score_lambda: Option<fn(f32) -> f32>) -> DiceSlotDescription {
+        DiceSlotDescription::new("Twos", true,|o| o.count_dice_of_value(2) as f32 * 2.0, solve_score_lambda)
     }
 
-    pub fn threes() -> DiceSlotDescription {
-        DiceSlotDescription::new("Threes", true,|o| o.count_dice_of_value(3) as f32 * 3.0)
+    pub fn threes(solve_score_lambda: Option<fn(f32) -> f32>) -> DiceSlotDescription {
+        DiceSlotDescription::new("Threes", true,|o| o.count_dice_of_value(3) as f32 * 3.0, solve_score_lambda)
     }
 
-    pub fn fours() -> DiceSlotDescription {
-        DiceSlotDescription::new("Fours", true,|o| o.count_dice_of_value(4) as f32 * 4.0)
+    pub fn fours(solve_score_lambda: Option<fn(f32) -> f32>) -> DiceSlotDescription {
+        DiceSlotDescription::new("Fours", true,|o| o.count_dice_of_value(4) as f32 * 4.0, solve_score_lambda)
     }
 
-    pub fn fives() -> DiceSlotDescription {
-        DiceSlotDescription::new("Fives", true,|o| o.count_dice_of_value(5) as f32 * 5.0)
+    pub fn fives(solve_score_lambda: Option<fn(f32) -> f32>) -> DiceSlotDescription {
+        DiceSlotDescription::new("Fives", true,|o| o.count_dice_of_value(5) as f32 * 5.0, solve_score_lambda)
     }
 
-    pub fn sixes() -> DiceSlotDescription {
-        DiceSlotDescription::new("Sixes", true,|o| o.count_dice_of_value(6) as f32 * 6.0)
+    pub fn sixes(solve_score_lambda: Option<fn(f32) -> f32>) -> DiceSlotDescription {
+        DiceSlotDescription::new("Sixes", true,|o| o.count_dice_of_value(6) as f32 * 6.0, solve_score_lambda)
     }
 
     pub fn one_pair() -> DiceSlotDescription {
@@ -189,7 +195,7 @@ impl DiceSlotDescription {
             }
             0.0
         }
-        DiceSlotDescription::new("One pair", false, score)
+        DiceSlotDescription::new("One pair", false, score, None)
     }
 
     pub fn two_pairs() -> DiceSlotDescription {
@@ -206,7 +212,7 @@ impl DiceSlotDescription {
             }
             0.0
         }
-        DiceSlotDescription::new("Two pairs", false, score)
+        DiceSlotDescription::new("Two pairs", false, score, None)
     }
 
     pub fn three_of_a_kind() -> DiceSlotDescription {
@@ -218,7 +224,7 @@ impl DiceSlotDescription {
             }
             0.0
         }
-        DiceSlotDescription::new("Three of a kind", false, score)
+        DiceSlotDescription::new("Three of a kind", false, score, None)
     }
 
     pub fn four_of_a_kind() -> DiceSlotDescription {
@@ -230,7 +236,7 @@ impl DiceSlotDescription {
             }
             0.0
         }
-        DiceSlotDescription::new("Four of a kind", false, score)
+        DiceSlotDescription::new("Four of a kind", false, score, None)
     }
 
     pub fn yatzy() -> DiceSlotDescription {
@@ -242,7 +248,7 @@ impl DiceSlotDescription {
             }
             0.0
         }
-        DiceSlotDescription::new("YATZY", false, score)
+        DiceSlotDescription::new("YATZY", false, score, None)
     }
 
     pub fn chance() -> DiceSlotDescription {
@@ -253,7 +259,7 @@ impl DiceSlotDescription {
             }
             return score;
         }
-        DiceSlotDescription::new("Chance", false, score)
+        DiceSlotDescription::new("Chance", false, score, None)
     }
 
     pub fn small_straight() -> DiceSlotDescription {
@@ -267,7 +273,7 @@ impl DiceSlotDescription {
             }
             return score;
         }
-        DiceSlotDescription::new("Small straight", false, score)
+        DiceSlotDescription::new("Small straight", false, score, None)
     }
 
     pub fn large_straight() -> DiceSlotDescription {
@@ -281,7 +287,7 @@ impl DiceSlotDescription {
             }
             return score;
         }
-        DiceSlotDescription::new("Large straight", false, score)
+        DiceSlotDescription::new("Large straight", false, score, None)
     }
 
     pub fn full_house() -> DiceSlotDescription {
@@ -307,7 +313,7 @@ impl DiceSlotDescription {
             }
             return 0.0;
         }
-        DiceSlotDescription::new("Full house", false, score)
+        DiceSlotDescription::new("Full house", false, score, None)
     }
 }
 
@@ -315,8 +321,9 @@ pub struct DiceSlot {
     index: SlotIndex,
     name: &'static str,
     slot_mask: SlotMask,
-    score_lambda: fn(&UnorderedDiceOutcome) -> f32,
-    bonus: bool
+    actual_score_lambda: fn(&UnorderedDiceOutcome) -> f32,
+    solve_score_lambda: Option<fn(f32) -> f32>,
+    bonus: bool,
 }
 
 impl DiceSlot {
@@ -325,12 +332,20 @@ impl DiceSlot {
             name: dice_slot_description.name,
             index,
             slot_mask: (1<<index),
-            score_lambda: dice_slot_description.score_lambda,
-            bonus: dice_slot_description.bonus
+            actual_score_lambda: dice_slot_description.actual_score_lambda,
+            solve_score_lambda: dice_slot_description.solve_score_lambda,
+            bonus: dice_slot_description.bonus,
         }
     }
-    fn score(&self, outcome: &UnorderedDiceOutcome) -> f32 {
-        (self.score_lambda)(outcome)
+    fn actual_score(&self, outcome: &UnorderedDiceOutcome) -> f32 {
+        (self.actual_score_lambda)(outcome)
+    }
+    fn solve_score(&self, outcome: &UnorderedDiceOutcome) -> f32 {
+        let s = (self.actual_score_lambda)(outcome);
+        if let Some(f) = self.solve_score_lambda {
+            return f(s);
+        }
+        return s;
     }
 }
 
@@ -356,7 +371,9 @@ pub struct DiceGame {
     bonus_threshold: f32,
     bonus_score: f32,
     // Scores as [slot-index][outcome-index]
-    scores: Vec<Vec<f32>>,
+    actual_scores: Vec<Vec<f32>>,
+    // Scores as [slot-index][outcome-index]
+    solve_scores: Vec<Vec<f32>>,
     // Given starting outcome and a move, return all possible outcomes with probabilities
     probabilities: HashMap<(OutcomeIndex, MoveIndex), Vec<(OutcomeIndex, f32)>>
 }
@@ -371,10 +388,13 @@ impl DiceGame {
             slots.push(DiceSlot::new(slot_description, idx));
         }
 
-        let mut all_scores = Vec::<Vec<f32>>::with_capacity(slots.len());
+        let mut all_actual_scores = Vec::<Vec<f32>>::with_capacity(slots.len());
+        let mut all_solve_scores = Vec::<Vec<f32>>::with_capacity(slots.len());
         for slot in slots.iter() {
-            let slot_scores = outcomes.iter().map(|o| slot.score(o)).collect();
-            all_scores.push(slot_scores);
+            let actual_slot_scores = outcomes.iter().map(|o| slot.actual_score(o)).collect();
+            all_actual_scores.push(actual_slot_scores);
+            let solve_slot_scores = outcomes.iter().map(|o| slot.solve_score(o)).collect();
+            all_solve_scores.push(solve_slot_scores);
         }
 
         let mut probabilities: HashMap<(OutcomeIndex, MoveIndex), Vec<(OutcomeIndex, f32)>> = HashMap::new();
@@ -387,7 +407,7 @@ impl DiceGame {
                 probabilities.insert((from.index, m.index), p);
             }
         }
-        DiceGame { outcomes, moves, slots, num_dice, num_sides, num_rolls, bonus_score, bonus_threshold, scores: all_scores, probabilities }
+        DiceGame { outcomes, moves, slots, num_dice, num_sides, num_rolls, bonus_score, bonus_threshold, actual_scores: all_actual_scores, solve_scores: all_solve_scores, probabilities }
     }
 
     pub fn find_outcome(&self, dice: &Vec<u8>) -> Option<&UnorderedDiceOutcome> {
@@ -411,9 +431,12 @@ impl Game<UnorderedDiceOutcome, DiceReroll, DiceSlot> for DiceGame {
     fn bonus_score(&self) -> f32 { self.bonus_score }
     fn bonus_threshold(&self) -> f32 { self.bonus_threshold }
 
-    fn score(&self, slot: &DiceSlot, outcome: &UnorderedDiceOutcome) -> f32 {
-        self.scores[slot.index][outcome.index]
+    fn actual_score(&self, slot: &DiceSlot, outcome: &UnorderedDiceOutcome) -> f32 {
+        self.actual_scores[slot.index][outcome.index]
+    }
 
+    fn solve_score(&self, slot: &DiceSlot, outcome: &UnorderedDiceOutcome) -> f32 {
+        self.solve_scores[slot.index][outcome.index]
     }
 
     fn move_probabilities<'a>(&'a self, from: OutcomeIndex, mov: MoveIndex) -> &'a Vec<(OutcomeIndex, f32)> {

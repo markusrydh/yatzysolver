@@ -41,7 +41,7 @@ impl <'a, G: Game<O, M, S>, O: Outcome, M: Move, S: Slot> GameSolver<'a, G, O, M
                     let new_round = &mut new_rounds.entry(new_mask).or_insert(Round::new(new_mask, self.game.moves_per_slot(), outcomes.len()));
                     for o in outcomes.iter() {
                         // Calculate expected score for outcome o
-                        let expected_score = self.game.score(s, o) + prev_round.expected_score.unwrap();
+                        let expected_score = self.game.solve_score(s, o) + prev_round.expected_score.unwrap();
                         // let b1: &Vec<BestMoveWithScore> = &new_round.best_moves[moves_per_slot-1];
                         // let mut best = &mut b1[o.index()];
                         let mut best = &mut new_round.best_moves[moves_per_slot-1][o.index()];
@@ -235,7 +235,7 @@ impl <'a, G: Game<O, M, S>, O: Outcome, M: Move, S: Slot> Position<'a, G, O, M, 
                         slot_mask: self.slot_mask | slot.slot_mask(),
                         move_number: 0,
                         outcome_index: self.solver.game.random_initial_outcome().index(),
-                        score: self.score + self.solver.game.score(slot, current_outcome)
+                        score: self.score + self.solver.game.actual_score(slot, current_outcome)
                     })
                 },
                 BestMove::Move(move_index) => {
@@ -264,7 +264,7 @@ impl <'a, G: Game<O, M, S>, O: Outcome, M: Move, S: Slot> Position<'a, G, O, M, 
                     let current_outcome = &self.solver.game.outcomes()[self.outcome_index];
                     Some(FilledSlot {
                         index : slot_index,
-                        score: self.solver.game.score(slot, current_outcome)
+                        score: self.solver.game.actual_score(slot, current_outcome)
                     })
                 },
                 BestMove::Move(move_index) => None,

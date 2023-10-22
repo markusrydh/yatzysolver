@@ -36,8 +36,11 @@ pub trait Game<O: Outcome, M: Move, S: Slot> : std::fmt::Display + std::marker::
     /// Number of moves made before making a slot selection
     fn moves_per_slot(&self) -> u8;
 
-    /// Score in slot for outcome
-    fn score(&self, slot: &S, outcome: &O) -> f32;
+    /// Actual score in slot for outcome
+    fn actual_score(&self, slot: &S, outcome: &O) -> f32;
+
+    /// Score used for solving in slot for outcome
+    fn solve_score(&self, slot: &S, outcome: &O) -> f32;
 
     // Given a source outcome and a move, list probabilities for each possible outcomes after using move
     fn move_probabilities<'a>(&'a self, from: OutcomeIndex, mov: MoveIndex) -> &'a Vec<(OutcomeIndex, f32)>;

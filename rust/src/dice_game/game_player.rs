@@ -16,7 +16,8 @@ pub struct SlotStatistics {
     sample_count: f32,
     score_sum: f32, 
     square_sum: f32,
-    zero_count: u32
+    zero_count: u32,
+    histogram: Histogram
 }
 
 pub struct GameStatistics {
@@ -25,11 +26,47 @@ pub struct GameStatistics {
     total_game_score: SlotStatistics,
     bonus: SlotStatistics,
     all_slots_statistics: Vec<SlotStatistics>
-}    
+}
+
+pub struct Histogram {
+    // Number of data points for different scores rounded to closest integer.
+    // The rounded score is the index into the vector
+    data: Vec<u32>,
+}
+
+impl Histogram {
+    fn new() -> Histogram {
+        Histogram { data: Vec::new() }
+    }
+
+    fn add_sample(&mut self, score: f32) {
+        let int_score = score as usize;
+        // Dynamically increase size of data vector according to needs. Works if scores are not terribly large.
+        while int_score >= self.data.len() {
+            // Ugly...
+            self.data.push(0);
+        }
+        self.data[int_score] += 1;
+    }
+}
+
+impl std::fmt::Display for Histogram {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        let mut res: Result<(), Error> = Ok(());
+        for i in 0..self.data.len() {
+            let count = self.data[i];
+//            if count > 0 {
+                res = res.and_then(|_x| writeln!(f, "{}\t{}", i, count));
+//            }
+        }
+        return res;
+    }
+}
+
 
 impl SlotStatistics{
     fn new() -> SlotStatistics {
-        SlotStatistics { sample_count: 0.0, score_sum: 0.0, square_sum: 0.0, zero_count: 0 }
+        SlotStatistics { sample_count: 0.0, score_sum: 0.0, square_sum: 0.0, zero_count: 0, histogram: Histogram::new() }
     }
 
     pub fn add_sample(&mut self, score: f32) {
@@ -39,6 +76,7 @@ impl SlotStatistics{
         if score == 0.0 {
             self.zero_count += 1;
         }
+        self.histogram.add_sample(score)
     }
     pub fn average(&self) -> f32 {
         return self.score_sum / self.sample_count;
@@ -80,23 +118,35 @@ impl GameStatistics {
             self.all_slots_statistics[i].add_sample(protocol.slot_scores[i]);
         }
     }
+
+    pub fn print_histogram(&self) {
+        println!("Total game score histogram:");
+        print!("{}", self.total_game_score.histogram);
+        println!("\nTotal slot score histogram:");
+        print!("{}", self.total_slot_score.histogram);
+        for i in 0..self.slot_names.len() {
+            println!("\n{} histogram:", self.slot_names[i]);
+            print!("{}", self.all_slots_statistics[i].histogram);
+        }
+    }
 }    
 
 impl std::fmt::Display for GameStatistics {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "Total game score: {}\n", self.total_game_score);
-        write!(f, "Total slot score: {}\n", self.total_slot_score);
-        write!(f, "Bonus probability: {}\n", self.bonus);
+        let mut res: Result<(), Error> = Ok(());
+        res = res.and_then(|_x: ()| write!(f, "Total game score: {}\n", self.total_game_score));
+        res = res.and_then(|_x| write!(f, "Total slot score: {}\n", self.total_slot_score));
+        res = res.and_then(|_x| write!(f, "Bonus probability: {}\n", self.bonus));
         for i in 0..self.slot_names.len() {
-            write!(f, "  {}: {}\n", self.slot_names[i], self.all_slots_statistics[i]);
+            res = res.and_then(|_x| write!(f, "  {}: {}\n", self.slot_names[i], self.all_slots_statistics[i]));
         }
-        return Ok(());
+        return res;
     }
 }
 
 pub fn play_games<G: Game<O, M, S>, O: Outcome, M: Move, S: Slot>(solver:&GameSolver<G, O, M, S>, game_count: u32) -> GameStatistics {
     let mut statistics = GameStatistics::new(solver.game);
-    for i in 0..game_count {
+    for _i in 0..game_count {
         let protocol = play_whole_game(solver);
         statistics.add_protocol(protocol);
     }
